@@ -64,7 +64,7 @@ bool getAllMesures()
     lastRefreshTime = millis();
     mesureHumidity ();
      mesureTemperature();
-    return true;
+    return true; 
   }
   else 
   {

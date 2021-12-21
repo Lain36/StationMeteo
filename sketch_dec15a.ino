@@ -18,6 +18,9 @@ const int BTN2_PIN = A2;
 int etatBtn2;
 const int led1 = 2;
 const int led2 = 3;
+
+const int led3 = 5;
+const int led4 = 9;
 static const unsigned long REFRESH_INTERVAL = 6000;
 static unsigned long lastRefreshTime = 0;
 int temperature_value = 0;
@@ -37,20 +40,25 @@ void setup()
  Wire.begin();
  Serial.begin(9600);
  if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE)) {
-    Serial.println(F("BH1750 Advanced begin"));
+  lcd.clear();
+  lcd.setCursor(0,0);
+    lcd.print(F("BH1750 Advanced begin"));
+    delay(2000);
   } else {
-    Serial.println(F("Error initialising BH1750"));
+    lcd.setCursor(0,1);
+    lcd.print(F("Error initialising BH1750"));
+    delay(2000);
   }
  displayInfos();
  getAllMesures();
  start=millis();
 pinMode(led1, OUTPUT);
 pinMode(led2, OUTPUT);
+pinMode(led3, OUTPUT);
+pinMode(led4, OUTPUT);
 lcd.begin(16,2);
-lcd.clear();
-lcd.setCursor(0,0);
-lcd.print("    bonjour");
-delay(2000);
+
+
   
 }
 bool getAllMesures() 
@@ -70,6 +78,9 @@ bool getAllMesures()
 
 void loop() 
 {
+  digitalWrite(led3, HIGH);
+  delay(3000);
+  digitalWrite(led4, HIGH);
 bool displayNewMesures = getAllMesures();
 bool buttonClicked = digitalRead(BTN_PIN);
 if (buttonClicked)
@@ -82,16 +93,59 @@ if (buttonClicked)
   delay(200);
  }
 
- PIR = analogRead(detect);
+ 
  float lux = lightMeter.readLightLevel();
  if(lux <= 2 )
  {
   digitalWrite(led1,HIGH);
  }
  else 
- {
+ { 
   digitalWrite(led1,LOW);
  }
+ PIR = analogRead(detect);
+ Serial.println(PIR);
+  if ( PIR > 300)
+  {
+    digitalWrite(led2, HIGH);
+    delay(700);
+    digitalWrite(led2, LOW);
+    delay(700);
+  }
+  else 
+  {
+     digitalWrite(led2, LOW);
+  }
+  if (lux <= 2 && PIR > 300)
+  {
+    digitalWrite(led3, LOW);
+    digitalWrite(led4, HIGH);
+     delay(700);
+    digitalWrite(led3, HIGH);
+     digitalWrite(led4, LOW);
+     delay(700);
+     digitalWrite(led3, LOW);
+    digitalWrite(led4, HIGH);
+     delay(700);
+     digitalWrite(led3, HIGH);
+     digitalWrite(led4, LOW);
+     delay(700);
+     digitalWrite(led3, LOW);
+    digitalWrite(led4, HIGH);
+     delay(700);
+     digitalWrite(led3, HIGH);
+     digitalWrite(led4, LOW);
+     delay(700);
+     digitalWrite(led3, LOW);
+    digitalWrite(led4, HIGH);
+     delay(700);
+     digitalWrite(led3, HIGH);
+     digitalWrite(led4, LOW);
+     delay(700);
+     digitalWrite(led3, LOW);
+    digitalWrite(led4, HIGH);
+     delay(700);
+  }
 }
 void displayInfos()
 {
@@ -132,7 +186,7 @@ void displayInfos()
    lcd.print(unit); 
     break;
      case 2: 
-     text = "led";
+     text = "relay";
        lcd.clear();
     lcd.setCursor(0,0);
     lcd.print(text);

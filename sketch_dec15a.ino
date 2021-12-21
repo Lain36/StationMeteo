@@ -1,30 +1,14 @@
 #include <BH1750.h>
-
 #include <Wire.h>
-
-
-
 #include <stdio.h>
 #include <CircularBuffer.h>
 #include <LiquidCrystal.h>
 #include <dht.h>
 #define BUFFER_SIZE 60
-#define _TOOLOW                       25
-#define _LOW                          50
-#define _HIGH                         500
-#define _TOOHIGH                      750
-#define LEVEL_TOOLOW                  "Trop bas"  
-#define LEVEL_LOW                     "Bas"          
-#define LEVEL_OPTIMAL                 "Idéal"         
-#define LEVEL_HIGH                    "Elevé"        
-#define LEVEL_TOOHIGH                 "Trop élevé"  
-uint16_t lux        = 250;
-int      luxLevel   = 3;
-String   luxMessage = LEVEL_OPTIMAL;
 CircularBuffer<int, BUFFER_SIZE> temperature_mesure; 
 CircularBuffer<int, BUFFER_SIZE> humidity_mesure; 
-
-BH1750 lightMeter(0x23);
+CircularBuffer<int, BUFFER_SIZE> lux_mesure;
+BH1750 lightMeter(0x5c);
 dht DHT; 
 LiquidCrystal lcd(4, 6, 10, 11, 12, 13);
 int displayMode = 0;
@@ -40,22 +24,34 @@ int temperature_value = 0;
 int temperature_average = 0; 
 int humidity_value = 0;
 int humidity_average = 0;
+int lux_value = 0;
+int lux_average = 0;
 int etat_led;
+int PIR = 0;
+int detect = A1;
 unsigned long MS;
 unsigned long start;
-void setup() { 
+
+void setup() 
+{ 
+ Wire.begin();
+ Serial.begin(9600);
+ if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE)) {
+    Serial.println(F("BH1750 Advanced begin"));
+  } else {
+    Serial.println(F("Error initialising BH1750"));
+  }
+ displayInfos();
+ getAllMesures();
+ start=millis();
 pinMode(led1, OUTPUT);
 pinMode(led2, OUTPUT);
 lcd.begin(16,2);
 lcd.clear();
 lcd.setCursor(0,0);
 lcd.print("    bonjour");
-delay(3000);
- displayInfos();
- getAllMesures();
- start=millis();
-
-  lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE);
+delay(2000);
+  
 }
 bool getAllMesures() 
 {
@@ -64,7 +60,7 @@ bool getAllMesures()
     lastRefreshTime = millis();
     mesureHumidity ();
      mesureTemperature();
-    return true; 
+    return true;
   }
   else 
   {
@@ -85,12 +81,14 @@ if (buttonClicked)
   displayInfos();
   delay(200);
  }
- etatBtn2 = digitalRead(BTN2_PIN);
- if( etatBtn2 == HIGH)
+
+ PIR = analogRead(detect);
+ float lux = lightMeter.readLightLevel();
+ if(lux <= 2 )
  {
   digitalWrite(led1,HIGH);
  }
- else
+ else 
  {
   digitalWrite(led1,LOW);
  }
@@ -151,18 +149,21 @@ void displayInfos()
   }
     break;
     case 3 : 
-    
-    break;
-   case 4 : 
-    text = "temps ecroulé";
+    text = "Light: ";
+    lcd.clear();
     lcd.setCursor(0,0);
-    lcd.print(text);
-    lcd.setCursor(0,1);
-     lcd.print ((MS / 1000) / 60);      
-  lcd.print ("' ");
-  lcd.print ((MS / 1000) % 60);      
-  lcd.print ("'' ");
-  break;
+    lcd.print(text);  
+    float lux = lightMeter.readLightLevel();
+    lcd.print(lux);
+    lcd.println(" lx");
+  
+    break;
+    case 4 : 
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("fin");
+    break;
+    
   }
 }
 void mesureTemperature()
@@ -181,7 +182,11 @@ void mesureHumidity ()
   humidity_average = getAverageBuffer(humidity_mesure);
   
 }
-
+void mesureLux ()
+{
+   float lux = lightMeter.readLightLevel();
+ 
+}
 void printBuffer(CircularBuffer<int, BUFFER_SIZE> &circular_buffer)
 {
   Serial.print("[");
